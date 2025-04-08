@@ -1,10 +1,10 @@
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -44,6 +44,7 @@ public class SensorClient {
                             Duration.between(lastAlertTime.get(roomKey), now).toMinutes() >= 1) {
 
                         stub.sendAlert(sensorName, floor, room, smokeLevel, coLevel, timestamp);
+                        writeAlertToFile(sensorName, floor, room, timestamp);
                         lastAlertTime.put(roomKey, now);
                     }
                 }
@@ -54,8 +55,22 @@ public class SensorClient {
 
             br.close();
         } catch (Exception e) {
-            System.err.println("❌ Client error: " + e.toString());
+            System.err.println("Client error: " + e.toString());
             e.printStackTrace();
         }
     }
+
+
+    public static void writeAlertToFile(String sensorName, int floor, int room, String timestamp) {
+        try {
+            String json = String.format("{\"sensor\":\"%s\", \"floor\":%d, \"room\":%d, \"timestamp\":\"%s\"}",
+                    sensorName, floor, room, timestamp);
+            java.io.FileWriter file = new java.io.FileWriter("alerts.json");
+            file.write(json);
+            file.close();
+        } catch (Exception e) {
+            System.err.println("File write error: " + e);
+        }
+    }
+    
 }

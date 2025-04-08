@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fire Alarm Dashboard</title>
+  <style>
+    .floor-title {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 120px); /* 5 rooms per floor */
+      gap: 10px;
+    }
+
+    .room {
+      padding: 20px;
+      background: #f0f0f0;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+      border: 2px solid #ccc;
+    }
+
+    .active {
+      animation: blink 1s infinite;
+      background-color: red;
+      color: white;
+    }
+
+    @keyframes blink {
+      0%   { background-color: red; }
+      50%  { background-color: yellow; }
+      100% { background-color: red; }
+    }
+  </style>
+</head>
+<body>
+
+<h2>🔥 Fire Alarm Sensor Grid</h2>
+<div id="dashboard"></div>
+<audio id="alarmSound" src="alarm.mp3" preload="auto"></audio>
+
+<script>
+  const alarmSound = document.getElementById("alarmSound");
+
+  // Generate grid for 7 floors × 5 rooms = 35 rooms (70 sensors)
+  const dashboard = document.getElementById("dashboard");
+  for (let floor = 1; floor <= 7; floor++) {
+    const title = document.createElement("div");
+    title.className = "floor-title";
+    title.innerText = `Floor ${floor}`;
+    dashboard.appendChild(title);
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+
+    for (let room = 1; room <= 5; room++) {
+      const div = document.createElement("div");
+      div.className = "room";
+      div.id = `f${floor}r${room}`;
+      div.innerText = `Room ${room}`;
+      grid.appendChild(div);
+    }
+
+    dashboard.appendChild(grid);
+  }
+
+  let lastTimestamp = null;
+
+  setInterval(() => {
+    fetch("http://localhost:5000/alert")
+      .then(res => res.json())
+      .then(data => {
+        if (data.timestamp !== lastTimestamp) {
+          lastTimestamp = data.timestamp;
+
+          const floor = data.floor;
+          const room = data.room;
+          const id = `f${floor}r${room}`;
+          const roomDiv = document.getElementById(id);
+
+          if (roomDiv) {
+            roomDiv.classList.add("active");
+            alarmSound.play();
+            setTimeout(() => {
+              roomDiv.classList.remove("active");
+            }, 6000);
+          }
+        }
+      })
+      .catch(err => console.error("Fetch error:", err));
+  }, 3000); // check every 3 seconds
+</script>
+
+</body>
+</html>
